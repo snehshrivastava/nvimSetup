@@ -13,3 +13,8 @@ NVIM v0.12.4
 Build type: Release
 LuaJIT 2.1.1785606157
 Run "nvim -V1 -v" for more info
+
+# for tmux
+
+https://www.youtube.com/watch?v=U-omALWIBos
+https://www.josean.com/posts/tmux-setup
