@@ -22,6 +22,9 @@ return {
 			handlers = {}, -- use default adapter configs
 		})
 
+		-- auto-load per-project debug config from .vscode/launch.json, if present
+		require("dap.ext.vscode").load_launchjs()
+
 		dapui.setup()
 		require("nvim-dap-virtual-text").setup()
 
