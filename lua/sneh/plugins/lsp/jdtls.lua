@@ -28,10 +28,9 @@ return {
       return candidates[#candidates] or vim.fn.expand("~/.local/share/java/lombok.jar")
     end
 
-    -- jdtls's own cmd() builder reads JDTLS_JVM_ARGS via Lua's os.getenv (nvim's
-    -- own process env), NOT via cmd_env (which only reaches the spawned child) -
-    -- must set it here for the javaagent flag to actually reach the launch args
-    vim.env.JDTLS_JVM_ARGS = "-javaagent:" .. find_lombok_jar()
+    -- the mason jdtls python launcher has no JDTLS_JVM_ARGS env hook - it only
+    -- accepts extra JVM options via a repeatable --jvm-arg=... CLI flag
+    local lombok_jvm_arg = "--jvm-arg=-javaagent:" .. find_lombok_jar()
 
     -- java-debug / java-test bundles, mason-installed by mason-tool-installer
     local bundles = {}
@@ -48,7 +47,7 @@ return {
     local workspace_dir = vim.fn.stdpath("data") .. "/jdtls-workspace/" .. vim.fn.fnamemodify(root_dir, ":p:h:t")
 
     jdtls.start_or_attach({
-      cmd = { "jdtls", "-data", workspace_dir },
+      cmd = { "jdtls", lombok_jvm_arg, "-data", workspace_dir },
       root_dir = root_dir,
       -- jdtls server itself requires Java 21+ to launch; scoped to this
       -- process only, does not touch system JAVA_HOME (project stays on 11)
