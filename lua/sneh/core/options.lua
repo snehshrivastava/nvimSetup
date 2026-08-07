@@ -5,6 +5,9 @@ local opt = vim.opt
 opt.relativenumber = true
 opt.number = true
 
+-- mouse
+opt.mouse = "a" -- enable mouse in all modes (click to focus pane/expand nvim-tree nodes)
+
 -- tabs & indentation
 opt.tabstop = 2 -- 2 spaces for tabs (prettier default)
 opt.shiftwidth = 2 -- 2 spaces for indent width
