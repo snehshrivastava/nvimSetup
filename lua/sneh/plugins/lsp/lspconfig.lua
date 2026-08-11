@@ -58,8 +58,28 @@ return {
 
         opts.desc = "Restart LSP"
         keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts) -- mapping to restart lsp if necessary
+
+        -- highlight other uses of symbol under cursor
+        local client = vim.lsp.get_client_by_id(ev.data.client_id)
+        if client and client:supports_method("textDocument/documentHighlight") then
+          local hl_group = vim.api.nvim_create_augroup("UserLspDocumentHighlight", { clear = false })
+          vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+            group = hl_group,
+            buffer = ev.buf,
+            callback = vim.lsp.buf.document_highlight,
+          })
+          vim.api.nvim_create_autocmd("CursorMoved", {
+            group = hl_group,
+            buffer = ev.buf,
+            callback = vim.lsp.buf.clear_references,
+          })
+        end
       end,
     })
+
+    vim.api.nvim_set_hl(0, "LspReferenceText", { bg = "#3a3a3a" })
+    vim.api.nvim_set_hl(0, "LspReferenceRead", { bg = "#3a3a3a" })
+    vim.api.nvim_set_hl(0, "LspReferenceWrite", { bg = "#4a3a3a" })
 
     -- used to enable autocompletion (assign to every lsp server config)
     local capabilities = cmp_nvim_lsp.default_capabilities()
@@ -71,6 +91,12 @@ return {
       local hl = "DiagnosticSign" .. type
       vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
     end
+
+    vim.diagnostic.config({
+      underline = true,
+      virtual_text = { spacing = 4, source = "if_many" },
+      severity_sort = true,
+    })
 
     -- apply capabilities to every server (mason-lspconfig auto-enables installed servers)
     vim.lsp.config("*", {

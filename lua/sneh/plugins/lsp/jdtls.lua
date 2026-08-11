@@ -58,5 +58,18 @@ return {
         bundles = bundles,
       },
     })
+
+    -- jdtls's type index doesn't always pick up a newly-added member on save
+    -- alone; these force a reindex without leaving nvim
+    local opts = { buffer = 0, silent = true }
+    opts.desc = "JDTLS: full workspace recompile"
+    vim.keymap.set("n", "<leader>jc", function()
+      jdtls.compile("full")
+    end, opts)
+
+    opts.desc = "JDTLS: wipe workspace index and restart"
+    vim.keymap.set("n", "<leader>jw", function()
+      jdtls.wipe_data_and_restart()
+    end, opts)
   end,
 }
