@@ -21,3 +21,12 @@ keymap.set("n", "<leader>tx", "<cmd>tabclose<CR>", { desc = "Close current tab" 
 keymap.set("n", "<leader>tn", "<cmd>tabn<CR>", { desc = "Go to next tab" }) --  go to next tab
 keymap.set("n", "<leader>tp", "<cmd>tabp<CR>", { desc = "Go to previous tab" }) --  go to previous tab
 keymap.set("n", "<leader>tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
+
+-- mouse: ctrl+click to jump to LSP definition, mouse back-button to jump back
+-- (X1Mouse is the standard back-button event nvim reports for SGR-capable
+-- terminals like ghostty; falls back to no-op if the terminal doesn't send it)
+keymap.set("n", "<C-LeftMouse>", function()
+  vim.lsp.buf.definition()
+end, { desc = "Go to LSP definition (ctrl+click)" })
+
+keymap.set("n", "<X1Mouse>", "<C-o>", { desc = "Jump back (mouse back button)" })
