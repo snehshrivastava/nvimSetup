@@ -39,6 +39,11 @@ return {
 				"pyright",
 				"clangd",
 				"jdtls",
+				"bashls",
+				"jsonls",
+				"yamlls",
+				"marksman",
+				"dockerls",
 			},
 		})
 
