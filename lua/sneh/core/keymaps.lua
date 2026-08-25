@@ -30,3 +30,7 @@ keymap.set("n", "<C-LeftMouse>", function()
 end, { desc = "Go to LSP definition (ctrl+click)" })
 
 keymap.set("n", "<X1Mouse>", "<C-o>", { desc = "Jump back (mouse back button)" })
+
+-- move by visual line on wrapped lines, not over the whole logical line
+keymap.set({ "n", "v" }, "j", "gj", { desc = "Move down (visual line)" })
+keymap.set({ "n", "v" }, "k", "gk", { desc = "Move up (visual line)" })

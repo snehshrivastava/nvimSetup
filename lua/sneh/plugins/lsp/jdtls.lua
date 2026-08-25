@@ -46,30 +46,46 @@ return {
     local root_dir = vim.fs.root(0, { "gradlew", "mvnw", ".git" }) or vim.fn.getcwd()
     local workspace_dir = vim.fn.stdpath("data") .. "/jdtls-workspace/" .. vim.fn.fnamemodify(root_dir, ":p:h:t")
 
-    jdtls.start_or_attach({
-      cmd = { "jdtls", lombok_jvm_arg, "-data", workspace_dir },
-      root_dir = root_dir,
-      -- jdtls server itself requires Java 21+ to launch; scoped to this
-      -- process only, does not touch system JAVA_HOME (project stays on 11)
-      cmd_env = {
-        JAVA_HOME = "/opt/homebrew/opt/openjdk@21",
-      },
-      init_options = {
-        bundles = bundles,
-      },
+    -- ft="java" only lazy-loads this config() once, for the first java buffer;
+    -- start_or_attach must run per buffer or later java buffers get no LSP
+    local function attach()
+      jdtls.start_or_attach({
+        cmd = { "jdtls", lombok_jvm_arg, "-data", workspace_dir },
+        root_dir = root_dir,
+        -- jdtls server itself requires Java 21+ to launch; scoped to this
+        -- process only, does not touch system JAVA_HOME (project stays on 11)
+        cmd_env = {
+          JAVA_HOME = "/opt/homebrew/opt/openjdk@21",
+        },
+        init_options = {
+          bundles = bundles,
+        },
+        on_attach = function(_, bufnr)
+          -- wires dap.adapters.java / dap.configurations.java from the
+          -- java-debug bundle above; without this, debug configs never exist
+          jdtls.setup_dap({ config_overrides = {} })
+          require("jdtls.dap").setup_dap_main_class_configs()
+
+          -- jdtls's type index doesn't always pick up a newly-added member on
+          -- save alone; these force a reindex without leaving nvim
+          local opts = { buffer = bufnr, silent = true }
+          opts.desc = "JDTLS: full workspace recompile"
+          vim.keymap.set("n", "<leader>jc", function()
+            jdtls.compile("full")
+          end, opts)
+
+          opts.desc = "JDTLS: wipe workspace index and restart"
+          vim.keymap.set("n", "<leader>jw", function()
+            jdtls.setup.wipe_data_and_restart()
+          end, opts)
+        end,
+      })
+    end
+
+    attach()
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = "java",
+      callback = attach,
     })
-
-    -- jdtls's type index doesn't always pick up a newly-added member on save
-    -- alone; these force a reindex without leaving nvim
-    local opts = { buffer = 0, silent = true }
-    opts.desc = "JDTLS: full workspace recompile"
-    vim.keymap.set("n", "<leader>jc", function()
-      jdtls.compile("full")
-    end, opts)
-
-    opts.desc = "JDTLS: wipe workspace index and restart"
-    vim.keymap.set("n", "<leader>jw", function()
-      jdtls.wipe_data_and_restart()
-    end, opts)
   end,
 }

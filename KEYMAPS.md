@@ -22,6 +22,30 @@ Leader key: `<Space>`
 | `<leader>ec` | Collapse explorer |
 | `<leader>er` | Refresh explorer |
 
+Inside the tree buffer (plugin defaults, `on_attach_default`):
+
+| Key | Action |
+|---|---|
+| `<CR>` / `o` | Open |
+| `<C-v>` | Open: vertical split |
+| `<C-x>` | Open: horizontal split |
+| `<C-t>` | Open: new tab |
+| `<Tab>` | Open preview |
+| `a` | Create file/directory |
+| `d` | Delete |
+| `r` | Rename |
+| `x` | Cut |
+| `c` | Copy |
+| `p` | Paste |
+| `y` | Copy name |
+| `-` | Up a directory |
+| `<BS>` | Close directory |
+| `R` | Refresh |
+| `H` | Toggle dotfiles filter |
+| `I` | Toggle git-ignored filter |
+| `q` | Close tree |
+| `g?` | Help (full mapping list) |
+
 ## Windows, splits, tabs
 
 | Key | Action |
@@ -134,6 +158,42 @@ Cursor resting on a symbol auto-highlights its other uses in the buffer (clears 
 | Key | Action |
 |---|---|
 | `]t` / `[t` | Next / prev todo comment |
+
+## Comments (Comment.nvim, plugin defaults)
+
+| Key | Action |
+|---|---|
+| `gcc` | Toggle line comment |
+| `gbc` | Toggle block comment |
+| `gc{motion}` | Comment a motion/textobject (n), or selection (v) |
+| `gb{motion}` | Block-comment a motion/textobject (n), or selection (v) |
+| `gco` | Insert comment on line below |
+| `gcO` | Insert comment on line above |
+| `gcA` | Insert comment at end of line |
+
+## Surround (nvim-surround, plugin defaults)
+
+| Key | Action |
+|---|---|
+| `ys{motion}{char}` | Add surround around motion |
+| `yss{char}` | Add surround around current line |
+| `yS{motion}{char}` | Add surround around motion, on new lines |
+| `S{char}` (visual) | Add surround around selection |
+| `gS{char}` (visual) | Add surround around selection, on new lines |
+| `ds{char}` | Delete surround |
+| `cs{char1}{char2}` | Change surround |
+| `cS{char1}{char2}` | Change surround, replacements on new lines |
+| `<C-g>s` / `<C-g>S` (insert) | Add surround around cursor |
+
+## Completion (nvim-cmp, insert mode)
+
+| Key | Action |
+|---|---|
+| `<C-j>` / `<C-k>` | Next / prev suggestion |
+| `<C-Space>` | Show completion suggestions |
+| `<C-b>` / `<C-f>` | Scroll docs |
+| `<C-e>` | Abort completion |
+| `<CR>` | Confirm selection |
 
 ## Misc
 
