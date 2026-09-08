@@ -35,6 +35,10 @@ opt.signcolumn = "yes" -- show sign column so that text doesn't shift
 -- backspace
 opt.backspace = "indent,eol,start" -- allow backspace on indent, end of line or insert mode start position
 
+-- let left/right movement wrap to the previous/next line at buffer edges,
+-- instead of stopping dead at column 1 / end of line
+opt.whichwrap:append("b,s,h,l,<,>,[,]")
+
 -- clipboard
 opt.clipboard:append("unnamedplus") -- use system clipboard as default register
 

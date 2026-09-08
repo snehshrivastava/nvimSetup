@@ -201,3 +201,7 @@ Cursor resting on a symbol auto-highlights its other uses in the buffer (clears 
 |---|---|
 | `<leader>nh` | Clear search highlight |
 | `<leader>+` / `<leader>-` | Increment / decrement number under cursor |
+| `J` / `K` (visual) | Move selected lines down / up, re-indenting (replaces visual-mode `J`'s default join-lines) |
+| `<C-d>` / `<C-u>` | Half page down / up, centered |
+| `n` / `N` | Next / prev search match, centered |
+| `<` / `>` (visual) | Indent left / right, keep selection for repeat |

@@ -12,6 +12,60 @@ return {
 
     local keymap = vim.keymap -- for conciseness
 
+    -- gd/gi/gt/gR: open in a new tab only when the target is a different
+    -- file ("tab drop" reuses an already-open tab for that file instead of
+    -- duplicating it); same-file jumps just move the cursor in place.
+    -- Covers both code paths telescope's lsp pickers can take: the
+    -- single-result auto-jump (native jump_type/reuse_win support) and the
+    -- multi-result picker's <CR> selection (attach_mappings override, since
+    -- jump_type/reuse_win only govern the single-result path).
+    local function jump_opts()
+      return {
+        jump_type = "tab drop",
+        reuse_win = true,
+        attach_mappings = function(prompt_bufnr, _)
+          local actions = require("telescope.actions")
+          local action_state = require("telescope.actions.state")
+          actions.select_default:replace(function()
+            local entry = action_state.get_selected_entry()
+            actions.close(prompt_bufnr)
+            if not entry then
+              return
+            end
+            local target = vim.fn.fnamemodify(entry.filename, ":p")
+            if target ~= vim.fn.expand("%:p") then
+              vim.cmd("tab drop " .. vim.fn.fnameescape(target))
+            end
+            if entry.lnum then
+              vim.api.nvim_win_set_cursor(0, { entry.lnum, math.max((entry.col or 1) - 1, 0) })
+            end
+          end)
+          return true
+        end,
+      }
+    end
+
+    -- vim.lsp.buf.declaration has no telescope wrapper (telescope.builtin
+    -- has no lsp_declarations); on_list fires uniformly for 1 or many
+    -- results, unlike telescope's split single/multi handling above
+    local function goto_declaration()
+      vim.lsp.buf.declaration({
+        on_list = function(t)
+          if #t.items == 1 then
+            local item = t.items[1]
+            local target = vim.fn.fnamemodify(item.filename, ":p")
+            if target ~= vim.fn.expand("%:p") then
+              vim.cmd("tab drop " .. vim.fn.fnameescape(target))
+            end
+            vim.api.nvim_win_set_cursor(0, { item.lnum, math.max((item.col or 1) - 1, 0) })
+          else
+            vim.fn.setqflist({}, " ", t)
+            vim.cmd("copen")
+          end
+        end,
+      })
+    end
+
     vim.api.nvim_create_autocmd("LspAttach", {
       group = vim.api.nvim_create_augroup("UserLspConfig", {}),
       callback = function(ev)
@@ -21,19 +75,27 @@ return {
 
         -- set keybinds
         opts.desc = "Show LSP references"
-        keymap.set("n", "gR", "<cmd>Telescope lsp_references<CR>", opts) -- show definition, references
+        keymap.set("n", "gR", function()
+          require("telescope.builtin").lsp_references(jump_opts())
+        end, opts) -- show definition, references
 
         opts.desc = "Go to declaration"
-        keymap.set("n", "gD", vim.lsp.buf.declaration, opts) -- go to declaration
+        keymap.set("n", "gD", goto_declaration, opts) -- go to declaration
 
         opts.desc = "Show LSP definitions"
-        keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts) -- show lsp definitions
+        keymap.set("n", "gd", function()
+          require("telescope.builtin").lsp_definitions(jump_opts())
+        end, opts) -- show lsp definitions
 
         opts.desc = "Show LSP implementations"
-        keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<CR>", opts) -- show lsp implementations
+        keymap.set("n", "gi", function()
+          require("telescope.builtin").lsp_implementations(jump_opts())
+        end, opts) -- show lsp implementations
 
         opts.desc = "Show LSP type definitions"
-        keymap.set("n", "gt", "<cmd>Telescope lsp_type_definitions<CR>", opts) -- show lsp type definitions
+        keymap.set("n", "gt", function()
+          require("telescope.builtin").lsp_type_definitions(jump_opts())
+        end, opts) -- show lsp type definitions
 
         opts.desc = "See available code actions"
         keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts) -- see available code actions, in visual mode will apply to selection

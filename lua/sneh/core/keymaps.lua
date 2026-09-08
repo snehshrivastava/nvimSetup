@@ -34,3 +34,18 @@ keymap.set("n", "<X1Mouse>", "<C-o>", { desc = "Jump back (mouse back button)" }
 -- move by visual line on wrapped lines, not over the whole logical line
 keymap.set({ "n", "v" }, "j", "gj", { desc = "Move down (visual line)" })
 keymap.set({ "n", "v" }, "k", "gk", { desc = "Move up (visual line)" })
+
+-- move selected lines up/down, re-indenting (replaces visual-mode J's
+-- default join-lines behavior)
+keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
+keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
+
+-- keep cursor centered after half-page jumps and search
+keymap.set("n", "<C-d>", "<C-d>zz", { desc = "Half page down (centered)" })
+keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Half page up (centered)" })
+keymap.set("n", "n", "nzzzv", { desc = "Next search match (centered)" })
+keymap.set("n", "N", "Nzzzv", { desc = "Prev search match (centered)" })
+
+-- keep visual selection active after indenting, so it can be repeated
+keymap.set("v", "<", "<gv", { desc = "Indent left (keep selection)" })
+keymap.set("v", ">", ">gv", { desc = "Indent right (keep selection)" })
