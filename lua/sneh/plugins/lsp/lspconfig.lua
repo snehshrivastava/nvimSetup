@@ -39,10 +39,30 @@ return {
             if entry.lnum then
               vim.api.nvim_win_set_cursor(0, { entry.lnum, math.max((entry.col or 1) - 1, 0) })
             end
+            vim.cmd("normal! zz")
           end)
           return true
         end,
       }
+    end
+
+    -- the multi-result path above centers synchronously right after
+    -- nvim_win_set_cursor, but telescope's single-result auto-jump (still
+    -- covered by jump_opts() above) happens inside its own async LSP
+    -- buf_request_all callback - nothing to chain onto from out here, so
+    -- arm a one-shot CursorMoved instead. Harmless if it fires early on the
+    -- multi-result picker taking focus first: that's a no-op zz on a
+    -- floating window, and the real jump above centers again regardless.
+    local function centered(fn)
+      return function()
+        vim.api.nvim_create_autocmd("CursorMoved", {
+          once = true,
+          callback = function()
+            pcall(vim.cmd, "normal! zz")
+          end,
+        })
+        fn()
+      end
     end
 
     -- vim.lsp.buf.declaration has no telescope wrapper (telescope.builtin
@@ -58,6 +78,7 @@ return {
               vim.cmd("tab drop " .. vim.fn.fnameescape(target))
             end
             vim.api.nvim_win_set_cursor(0, { item.lnum, math.max((item.col or 1) - 1, 0) })
+            vim.cmd("normal! zz")
           else
             vim.fn.setqflist({}, " ", t)
             vim.cmd("copen")
@@ -75,27 +96,27 @@ return {
 
         -- set keybinds
         opts.desc = "Show LSP references"
-        keymap.set("n", "gR", function()
+        keymap.set("n", "gR", centered(function()
           require("telescope.builtin").lsp_references(jump_opts())
-        end, opts) -- show definition, references
+        end), opts) -- show definition, references
 
         opts.desc = "Go to declaration"
         keymap.set("n", "gD", goto_declaration, opts) -- go to declaration
 
         opts.desc = "Show LSP definitions"
-        keymap.set("n", "gd", function()
+        keymap.set("n", "gd", centered(function()
           require("telescope.builtin").lsp_definitions(jump_opts())
-        end, opts) -- show lsp definitions
+        end), opts) -- show lsp definitions
 
         opts.desc = "Show LSP implementations"
-        keymap.set("n", "gi", function()
+        keymap.set("n", "gi", centered(function()
           require("telescope.builtin").lsp_implementations(jump_opts())
-        end, opts) -- show lsp implementations
+        end), opts) -- show lsp implementations
 
         opts.desc = "Show LSP type definitions"
-        keymap.set("n", "gt", function()
+        keymap.set("n", "gt", centered(function()
           require("telescope.builtin").lsp_type_definitions(jump_opts())
-        end, opts) -- show lsp type definitions
+        end), opts) -- show lsp type definitions
 
         opts.desc = "See available code actions"
         keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts) -- see available code actions, in visual mode will apply to selection
