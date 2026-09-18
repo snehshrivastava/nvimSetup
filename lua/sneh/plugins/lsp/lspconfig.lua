@@ -12,17 +12,14 @@ return {
 
     local keymap = vim.keymap -- for conciseness
 
-    -- gd/gi/gt/gR: open in a new tab only when the target is a different
-    -- file ("tab drop" reuses an already-open tab for that file instead of
-    -- duplicating it); same-file jumps just move the cursor in place.
-    -- Covers both code paths telescope's lsp pickers can take: the
-    -- single-result auto-jump (native jump_type/reuse_win support) and the
-    -- multi-result picker's <CR> selection (attach_mappings override, since
-    -- jump_type/reuse_win only govern the single-result path).
+    -- gd/gi/gt/gR jump in the current window (telescope's default
+    -- jump_type) - no new tab or split unless one is asked for explicitly
+    -- with the picker's own <C-t>/<C-x>/<C-v>. The attach_mappings override
+    -- stays because telescope's multi-result <CR> path needs the explicit
+    -- cursor placement + zz; jump_type only governs the single-result
+    -- auto-jump.
     local function jump_opts()
       return {
-        jump_type = "tab drop",
-        reuse_win = true,
         attach_mappings = function(prompt_bufnr, _)
           local actions = require("telescope.actions")
           local action_state = require("telescope.actions.state")
@@ -34,7 +31,7 @@ return {
             end
             local target = vim.fn.fnamemodify(entry.filename, ":p")
             if target ~= vim.fn.expand("%:p") then
-              vim.cmd("tab drop " .. vim.fn.fnameescape(target))
+              vim.cmd("edit " .. vim.fn.fnameescape(target))
             end
             if entry.lnum then
               vim.api.nvim_win_set_cursor(0, { entry.lnum, math.max((entry.col or 1) - 1, 0) })
@@ -75,7 +72,7 @@ return {
             local item = t.items[1]
             local target = vim.fn.fnamemodify(item.filename, ":p")
             if target ~= vim.fn.expand("%:p") then
-              vim.cmd("tab drop " .. vim.fn.fnameescape(target))
+              vim.cmd("edit " .. vim.fn.fnameescape(target))
             end
             vim.api.nvim_win_set_cursor(0, { item.lnum, math.max((item.col or 1) - 1, 0) })
             vim.cmd("normal! zz")
