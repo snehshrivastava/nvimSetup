@@ -43,6 +43,19 @@ return {
       git = {
         ignore = false,
       },
+      on_attach = function(bufnr)
+        local api = require('nvim-tree.api')
+        -- Use default mappings
+        api.config.mappings.default_on_attach(bufnr)
+        -- T mirrors NERDTree's T (vim/plugin-config/nerdtree.vim): open the
+        -- node in a new tab but *stay in the tree*, so several files can be
+        -- opened in a row. api.node.open.tab on its own switches to the new
+        -- tab - that's nvim-tree's <C-t>, not NERDTree's T - so hop back.
+        vim.keymap.set('n', 'T', function()
+          api.node.open.tab()
+          vim.cmd('tabprevious')
+        end, { desc = 'Open: New Tab (stay in tree)', buffer = bufnr, noremap = true, silent = true, nowait = true })
+      end,
     })
 
     -- set keymaps

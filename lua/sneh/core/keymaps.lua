@@ -49,3 +49,22 @@ keymap.set("n", "N", "Nzzzv", { desc = "Prev search match (centered)" })
 -- keep visual selection active after indenting, so it can be repeated
 keymap.set("v", "<", "<gv", { desc = "Indent left (keep selection)" })
 keymap.set("v", ">", ">gv", { desc = "Indent right (keep selection)" })
+
+-- prevent pasting in visual mode from overwriting the unnamed register
+keymap.set("v", "p", '"_dP', { desc = "Paste without overwriting clipboard" })
+keymap.set("n", "x", '"_x', { desc = "Delete character without copying" })
+keymap.set({ "n", "v" }, "<leader>d", '"_d', { desc = "Delete to blackhole register (do not copy)" })
+
+-- Plain y already reaches the system clipboard via the TextYankPost autocmd in
+-- core/autocmds.lua; deletes deliberately do not. These are the paste-back and
+-- explicit-yank counterparts (mirrors vim/core/keymaps.vim).
+--
+-- paste *from* the clipboard: plain p stays on nvim's unnamed register, so
+-- this is how something copied in another app gets in
+keymap.set({ "n", "v" }, "<leader>p", '"+p', { desc = "Paste from system clipboard" })
+
+-- redundant with the autocmd above (plain y already reaches the clipboard) but
+-- kept as the explicit form
+keymap.set({ "n", "v" }, "<leader>y", '"+y', { desc = "Yank to system clipboard" })
+-- nvim remaps Y to y$, so this yanks to end of line (vim's Y is yy)
+keymap.set("n", "<leader>Y", '"+Y', { desc = "Yank to end of line to system clipboard" })

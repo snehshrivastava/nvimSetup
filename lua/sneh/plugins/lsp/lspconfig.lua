@@ -209,12 +209,12 @@ return {
       local candidates = {}
       vim.list_extend(
         candidates,
-        vim.fn.glob(vim.fn.expand("~/.m2/repository/org/projectlombok/lombok/*/lombok-*.jar"), false, true)
+        vim.fn.glob(vim.fn.expand("~") .. "/.m2/repository/org/projectlombok/lombok/*/lombok-*.jar", false, true)
       )
       vim.list_extend(
         candidates,
         vim.fn.glob(
-          vim.fn.expand("~/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/*/*/lombok-*.jar"),
+          vim.fn.expand("~") .. "/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/*/*/lombok-*.jar",
           false,
           true
         )
@@ -235,7 +235,7 @@ return {
       -- jdtls server itself requires Java 21+ to launch; scoped to this
       -- process only, does not touch system JAVA_HOME (project stays on 11)
       cmd_env = {
-        JAVA_HOME = "/opt/homebrew/opt/openjdk@21",
+        JAVA_HOME = "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home",
       },
     })
 

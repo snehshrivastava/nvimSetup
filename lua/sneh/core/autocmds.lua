@@ -16,3 +16,22 @@ vim.api.nvim_create_autocmd("FileChangedShellPost", {
     vim.notify("File changed on disk, buffer reloaded", vim.log.levels.INFO)
   end,
 })
+
+-- Yanks reach the system clipboard, deletes do not. 'clipboard' cannot express
+-- that - "unnamedplus" routes *every* register write through the pasteboard,
+-- so dd/x/c clobber it too (see core/options.lua). Keying off
+-- vim.v.event.operator instead is selective: it is "y" only for a real yank,
+-- and "d" for d/dd/x, "c" for c/cc/s. Deletes therefore stay in nvim's own
+-- registers and `p` after `dd` still pastes the deleted line.
+--
+-- regname is checked so an explicit "ayy targets register a alone and leaves
+-- the pasteboard untouched.
+vim.api.nvim_create_autocmd("TextYankPost", {
+  group = vim.api.nvim_create_augroup("UserYankToClipboard", { clear = true }),
+  callback = function()
+    local ev = vim.v.event
+    if ev.operator == "y" and ev.regname == "" then
+      vim.fn.setreg("+", ev.regcontents, ev.regtype)
+    end
+  end,
+})

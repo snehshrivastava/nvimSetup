@@ -25,6 +25,26 @@ return {
 		})
 
 		mason_lspconfig.setup({
+			-- mason-lspconfig defaults to automatic_enable = true, which calls
+			-- vim.lsp.enable() for every installed server.
+			--
+			-- jdtls: nvim-jdtls (plugins/lsp/jdtls.lua) starts its own jdtls
+			-- client, with the lombok javaagent and the java-debug/java-test
+			-- bundles that DAP needs. Auto-enabling lspconfig's plain jdtls makes
+			-- both race to start on the first java buffer. They currently resolve
+			-- to the same root (code/km-pnp via mvnw) so nvim reuses one client
+			-- rather than spawning two, but whichever registers first wins - and
+			-- if that is lspconfig's, the javaagent and bundles are silently
+			-- absent. Excluding it makes nvim-jdtls the sole, deterministic owner.
+			--
+			-- graphql: graphql-language-service-server hard-fails initialize in any
+			-- repo with .graphql files but no graphql.config.*/.graphqlrc* at the
+			-- root. Excluded to match coc's "graphql.filetypes": [] in
+			-- vim/coc-settings.json. Re-enable by removing it here and adding a
+			-- graphql config to the repo.
+			automatic_enable = {
+				exclude = { "jdtls", "graphql" },
+			},
 			-- list of servers for mason to install
 			ensure_installed = {
 				"ts_ls",

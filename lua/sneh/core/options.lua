@@ -39,8 +39,12 @@ opt.backspace = "indent,eol,start" -- allow backspace on indent, end of line or 
 -- instead of stopping dead at column 1 / end of line
 opt.whichwrap:append("b,s,h,l,<,>,[,]")
 
--- clipboard
-opt.clipboard:append("unnamedplus") -- use system clipboard as default register
+-- clipboard: left empty on purpose. The wanted behaviour is "yanks go to the
+-- system clipboard, deletes do not", and 'clipboard' cannot express it -
+-- "unnamedplus" routes every register write through the pasteboard, so dd/x/c
+-- clobber it too. The TextYankPost autocmd in core/autocmds.lua does the yank
+-- half selectively instead.
+opt.clipboard = "" -- see the TextYankPost autocmd in core/autocmds.lua
 
 -- split windows
 opt.splitright = true -- split vertical window to the right
