@@ -15,14 +15,18 @@ return {
 
 		local lint_augroup = vim.api.nvim_create_augroup("lint", { clear = true })
 
-		vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
+		-- BufReadPost, not BufEnter: BufEnter re-ran every linter (pylint takes
+		-- seconds) on each buffer/window switch, not just when content changed
+		vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost", "InsertLeave" }, {
 			group = lint_augroup,
 			callback = function()
 				lint.try_lint()
 			end,
 		})
 
-		vim.keymap.set("n", "<leader>l", function()
+		-- <leader>ll, not <leader>l: <leader>lg (lazygit) made a bare <leader>l
+		-- wait out 'timeoutlen' on every press
+		vim.keymap.set("n", "<leader>ll", function()
 			lint.try_lint()
 		end, { desc = "Trigger linting for current file" })
 	end,

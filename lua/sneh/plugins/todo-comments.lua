@@ -1,6 +1,9 @@
 return {
   "folke/todo-comments.nvim",
   event = { "BufReadPre", "BufNewFile" },
+  -- <leader>ft runs :TodoTelescope, which otherwise does not exist until a
+  -- file has been read (e.g. from the alpha dashboard)
+  cmd = { "TodoTelescope", "TodoTrouble", "TodoQuickFix", "TodoLocList" },
   dependencies = { "nvim-lua/plenary.nvim" },
   config = function()
     local todo_comments = require("todo-comments")

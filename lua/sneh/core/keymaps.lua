@@ -31,14 +31,21 @@ end, { desc = "Go to LSP definition (ctrl+click)" })
 
 keymap.set("n", "<X1Mouse>", "<C-o>", { desc = "Jump back (mouse back button)" })
 
--- move by visual line on wrapped lines, not over the whole logical line
-keymap.set({ "n", "v" }, "j", "gj", { desc = "Move down (visual line)" })
-keymap.set({ "n", "v" }, "k", "gk", { desc = "Move up (visual line)" })
+-- move by visual line on wrapped lines, not over the whole logical line -
+-- but only without a count: 'relativenumber' numbers logical lines, so 5j
+-- must move 5 logical lines or it lands short of the line it points at on
+-- any wrapped line in between
+keymap.set({ "n", "x" }, "j", "v:count ? 'j' : 'gj'", { expr = true, desc = "Move down (visual line)" })
+keymap.set({ "n", "x" }, "k", "v:count ? 'k' : 'gk'", { expr = true, desc = "Move up (visual line)" })
+
+-- Visual-mode maps below use "x", not "v": "v" also covers Select mode, which
+-- LuaSnip placeholders put you in - there j/k/p/J/K/</> must insert the
+-- typed character, not run a mapping
 
 -- move selected lines up/down, re-indenting (replaces visual-mode J's
 -- default join-lines behavior)
-keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
-keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
+keymap.set("x", "J", ":m '>+1<CR>gv=gv", { desc = "Move selection down" })
+keymap.set("x", "K", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 
 -- keep cursor centered after half-page jumps and search
 keymap.set("n", "<C-d>", "<C-d>zz", { desc = "Half page down (centered)" })
@@ -47,13 +54,16 @@ keymap.set("n", "n", "nzzzv", { desc = "Next search match (centered)" })
 keymap.set("n", "N", "Nzzzv", { desc = "Prev search match (centered)" })
 
 -- keep visual selection active after indenting, so it can be repeated
-keymap.set("v", "<", "<gv", { desc = "Indent left (keep selection)" })
-keymap.set("v", ">", ">gv", { desc = "Indent right (keep selection)" })
+keymap.set("x", "<", "<gv", { desc = "Indent left (keep selection)" })
+keymap.set("x", ">", ">gv", { desc = "Indent right (keep selection)" })
 
--- prevent pasting in visual mode from overwriting the unnamed register
-keymap.set("v", "p", '"_dP', { desc = "Paste without overwriting clipboard" })
+-- prevent pasting in visual mode from overwriting the unnamed register.
+-- Visual P does exactly that natively; the old "_dP pasted one character
+-- early whenever the selection ended at end of line ("_d leaves the cursor
+-- on the new last char, and P inserts before it)
+keymap.set("x", "p", "P", { desc = "Paste without overwriting clipboard" })
 keymap.set("n", "x", '"_x', { desc = "Delete character without copying" })
-keymap.set({ "n", "v" }, "<leader>d", '"_d', { desc = "Delete to blackhole register (do not copy)" })
+keymap.set({ "n", "x" }, "<leader>d", '"_d', { desc = "Delete to blackhole register (do not copy)" })
 
 -- Plain y already reaches the system clipboard via the TextYankPost autocmd in
 -- core/autocmds.lua; deletes deliberately do not. These are the paste-back and
@@ -61,10 +71,10 @@ keymap.set({ "n", "v" }, "<leader>d", '"_d', { desc = "Delete to blackhole regis
 --
 -- paste *from* the clipboard: plain p stays on nvim's unnamed register, so
 -- this is how something copied in another app gets in
-keymap.set({ "n", "v" }, "<leader>p", '"+p', { desc = "Paste from system clipboard" })
+keymap.set({ "n", "x" }, "<leader>p", '"+p', { desc = "Paste from system clipboard" })
 
 -- redundant with the autocmd above (plain y already reaches the clipboard) but
 -- kept as the explicit form
-keymap.set({ "n", "v" }, "<leader>y", '"+y', { desc = "Yank to system clipboard" })
+keymap.set({ "n", "x" }, "<leader>y", '"+y', { desc = "Yank to system clipboard" })
 -- nvim remaps Y to y$, so this yanks to end of line (vim's Y is yy)
 keymap.set("n", "<leader>Y", '"+Y', { desc = "Yank to end of line to system clipboard" })

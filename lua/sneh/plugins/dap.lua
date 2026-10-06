@@ -6,6 +6,44 @@ return {
 		"theHamsta/nvim-dap-virtual-text", -- inline variable values
 		"jay-babu/mason-nvim-dap.nvim", -- auto-install adapters via mason
 	},
+	-- lazy-loaded on first debug keypress (or require("dap"), e.g. from
+	-- nvim-jdtls's setup_dap) instead of at startup: dap + dap-ui + nio +
+	-- mason-nvim-dap were a large share of startup time for a debugger that
+	-- most sessions never open
+	keys = {
+		{ "<leader>bb", function() require("dap").toggle_breakpoint() end, desc = "Debug: toggle breakpoint" },
+		{
+			"<leader>bB",
+			function()
+				require("dap").set_breakpoint(vim.fn.input("Breakpoint condition: "))
+			end,
+			desc = "Debug: conditional breakpoint",
+		},
+		-- starting a new debug run while one's already active spawns a
+		-- second debuggee process and orphans the first (leaked JVM/process
+		-- kept running in background); terminate before continuing
+		{
+			"<leader>bc",
+			function()
+				local dap = require("dap")
+				if dap.session() then
+					dap.terminate(nil, nil, function()
+						dap.continue()
+					end)
+				else
+					dap.continue()
+				end
+			end,
+			desc = "Debug: continue / start",
+		},
+		{ "<leader>bi", function() require("dap").step_into() end, desc = "Debug: step into" },
+		{ "<leader>bo", function() require("dap").step_over() end, desc = "Debug: step over" },
+		{ "<leader>bO", function() require("dap").step_out() end, desc = "Debug: step out" },
+		{ "<leader>br", function() require("dap").repl.open() end, desc = "Debug: open REPL" },
+		{ "<leader>bl", function() require("dap").run_last() end, desc = "Debug: run last" },
+		{ "<leader>bu", function() require("dapui").toggle() end, desc = "Debug: toggle UI" },
+		{ "<leader>bt", function() require("dap").terminate() end, desc = "Debug: terminate" },
+	},
 	config = function()
 		local dap = require("dap")
 		local dapui = require("dapui")
@@ -56,32 +94,6 @@ return {
 		-- breakpoint sign
 		vim.fn.sign_define("DapBreakpoint", { text = "🔴", texthl = "", linehl = "", numhl = "" })
 		vim.fn.sign_define("DapStopped", { text = "▶️", texthl = "", linehl = "Visual", numhl = "" })
-
-		-- keymaps
-		local keymap = vim.keymap
-		keymap.set("n", "<leader>bb", dap.toggle_breakpoint, { desc = "Debug: toggle breakpoint" })
-		keymap.set("n", "<leader>bB", function()
-			dap.set_breakpoint(vim.fn.input("Breakpoint condition: "))
-		end, { desc = "Debug: conditional breakpoint" })
-		-- starting a new debug run while one's already active spawns a
-		-- second debuggee process and orphans the first (leaked JVM/process
-		-- kept running in background); terminate before continuing
-		keymap.set("n", "<leader>bc", function()
-			if dap.session() then
-				dap.terminate(nil, nil, function()
-					dap.continue()
-				end)
-			else
-				dap.continue()
-			end
-		end, { desc = "Debug: continue / start" })
-		keymap.set("n", "<leader>bi", dap.step_into, { desc = "Debug: step into" })
-		keymap.set("n", "<leader>bo", dap.step_over, { desc = "Debug: step over" })
-		keymap.set("n", "<leader>bO", dap.step_out, { desc = "Debug: step out" })
-		keymap.set("n", "<leader>br", dap.repl.open, { desc = "Debug: open REPL" })
-		keymap.set("n", "<leader>bl", dap.run_last, { desc = "Debug: run last" })
-		keymap.set("n", "<leader>bu", dapui.toggle, { desc = "Debug: toggle UI" })
-		keymap.set("n", "<leader>bt", dap.terminate, { desc = "Debug: terminate" })
 
 		-- quitting nvim mid-debug otherwise leaves the debuggee process running
 		vim.api.nvim_create_autocmd("VimLeavePre", {

@@ -6,6 +6,9 @@ return {
     auto_session.setup({
       auto_restore_enabled = false,
       auto_session_suppress_dirs = { "~/", "~/Dev/", "~/Downloads", "~/Documents", "~/Desktop/" },
+      -- don't require telescope at startup just to register :Telescope
+      -- session-lens (unused here); :AutoSession search still loads it on demand
+      session_lens = { load_on_setup = false },
     })
 
     local keymap = vim.keymap

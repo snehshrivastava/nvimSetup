@@ -1,5 +1,10 @@
 return {
 	"williamboman/mason.nvim",
+	-- not VeryLazy: mason must put its bin/ on PATH and mason-lspconfig must
+	-- vim.lsp.enable() the servers before the first buffer's FileType fires,
+	-- or that buffer gets no LSP. Still skips startup for `nvim` with no file.
+	event = { "BufReadPre", "BufNewFile" },
+	cmd = { "Mason", "MasonInstall", "MasonUpdate", "MasonLog", "MasonToolsInstall", "MasonToolsUpdate" },
 	dependencies = {
 		"williamboman/mason-lspconfig.nvim",
 		"WhoIsSethDaniel/mason-tool-installer.nvim",

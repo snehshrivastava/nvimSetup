@@ -53,12 +53,16 @@ return {
     local java_test_path = mason_registry.get_package("java-test"):get_install_path()
     vim.list_extend(bundles, vim.fn.glob(java_test_path .. "/extension/server/*.jar", true, true))
 
-    local root_dir = vim.fs.root(0, { "gradlew", "mvnw", ".git" }) or vim.fn.getcwd()
-    local workspace_dir = vim.fn.stdpath("data") .. "/jdtls-workspace/" .. vim.fn.fnamemodify(root_dir, ":p:h:t")
-
     -- ft="java" only lazy-loads this config() once, for the first java buffer;
-    -- start_or_attach must run per buffer or later java buffers get no LSP
-    local function attach()
+    -- start_or_attach must run per buffer or later java buffers get no LSP.
+    -- The root is resolved per buffer too: computed once up here, every java
+    -- file - even one from a different repo - attached to the first repo's
+    -- server and workspace. A different root_dir makes start_or_attach spawn
+    -- a separate client; the same root reuses the existing one.
+    local function attach(args)
+      local bufnr = args and args.buf or vim.api.nvim_get_current_buf()
+      local root_dir = vim.fs.root(bufnr, { "gradlew", "mvnw", ".git" }) or vim.fn.getcwd()
+      local workspace_dir = vim.fn.stdpath("data") .. "/jdtls-workspace/" .. vim.fn.fnamemodify(root_dir, ":p:h:t")
       jdtls.start_or_attach({
         cmd = { "jdtls", lombok_jvm_arg, "-data", workspace_dir },
         root_dir = root_dir,
@@ -89,7 +93,7 @@ return {
             jdtls.setup.wipe_data_and_restart()
           end, opts)
         end,
-      })
+      }, nil, { bufnr = bufnr })
     end
 
     attach()

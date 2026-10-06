@@ -4,7 +4,6 @@ return {
   dependencies = {
     "hrsh7th/cmp-nvim-lsp",
     { "antosha417/nvim-lsp-file-operations", config = true },
-    { "folke/neodev.nvim", opts = {} },
   },
   config = function()
     -- import cmp-nvim-lsp plugin
@@ -50,14 +49,22 @@ return {
     -- arm a one-shot CursorMoved instead. Harmless if it fires early on the
     -- multi-result picker taking focus first: that's a no-op zz on a
     -- floating window, and the real jump above centers again regardless.
+    --
+    -- When the request finds nothing ("No definitions found") no jump
+    -- happens, and the armed autocmd would otherwise recenter on whatever
+    -- unrelated cursor move came next - so it disarms itself after a short
+    -- window. An LSP answer slower than that just isn't centered.
     local function centered(fn)
       return function()
-        vim.api.nvim_create_autocmd("CursorMoved", {
+        local id = vim.api.nvim_create_autocmd("CursorMoved", {
           once = true,
           callback = function()
             pcall(vim.cmd, "normal! zz")
           end,
         })
+        vim.defer_fn(function()
+          pcall(vim.api.nvim_del_autocmd, id)
+        end, 2000)
         fn()
       end
     end
@@ -116,7 +123,7 @@ return {
         end), opts) -- show lsp type definitions
 
         opts.desc = "See available code actions"
-        keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts) -- see available code actions, in visual mode will apply to selection
+        keymap.set({ "n", "x" }, "<leader>ca", vim.lsp.buf.code_action, opts) -- see available code actions, in visual mode will apply to selection
 
         opts.desc = "Smart rename"
         keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts) -- smart rename
@@ -128,10 +135,14 @@ return {
         keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts) -- show diagnostics for line
 
         opts.desc = "Go to previous diagnostic"
-        keymap.set("n", "[d", vim.diagnostic.goto_prev, opts) -- jump to previous diagnostic in buffer
+        keymap.set("n", "[d", function()
+          vim.diagnostic.jump({ count = -1, float = true })
+        end, opts) -- jump to previous diagnostic in buffer
 
         opts.desc = "Go to next diagnostic"
-        keymap.set("n", "]d", vim.diagnostic.goto_next, opts) -- jump to next diagnostic in buffer
+        keymap.set("n", "]d", function()
+          vim.diagnostic.jump({ count = 1, float = true })
+        end, opts) -- jump to next diagnostic in buffer
 
         opts.desc = "Show documentation for what is under cursor"
         keymap.set("n", "K", vim.lsp.buf.hover, opts) -- show documentation for what is under cursor
@@ -164,15 +175,17 @@ return {
     -- used to enable autocompletion (assign to every lsp server config)
     local capabilities = cmp_nvim_lsp.default_capabilities()
 
-    -- Change the Diagnostic symbols in the sign column (gutter)
-    -- (not in youtube nvim video)
-    local signs = { Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }
-    for type, icon in pairs(signs) do
-      local hl = "DiagnosticSign" .. type
-      vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
-    end
-
     vim.diagnostic.config({
+      -- gutter icons: nvim 0.11+ ignores sign_define("DiagnosticSign*", ...),
+      -- so they must be set here or the gutter falls back to plain E/W/I/H
+      signs = {
+        text = {
+          [vim.diagnostic.severity.ERROR] = " ",
+          [vim.diagnostic.severity.WARN] = " ",
+          [vim.diagnostic.severity.HINT] = "󰠠 ",
+          [vim.diagnostic.severity.INFO] = " ",
+        },
+      },
       underline = true,
       virtual_text = { spacing = 4, source = "if_many" },
       severity_sort = true,
@@ -185,7 +198,10 @@ return {
 
     vim.lsp.config("svelte", {
       on_attach = function(client, bufnr)
+        -- one autocmd per client: on_attach runs for every svelte buffer, and
+        -- an ungrouped autocmd stacked a duplicate notify on each attach
         vim.api.nvim_create_autocmd("BufWritePost", {
+          group = vim.api.nvim_create_augroup("UserSvelteTsNotify" .. client.id, { clear = true }),
           pattern = { "*.js", "*.ts" },
           callback = function(ctx)
             -- Here use ctx.match instead of ctx.file
@@ -201,42 +217,6 @@ return {
 
     vim.lsp.config("emmet_ls", {
       filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less", "svelte" },
-    })
-
-    -- find lombok jar: prefer the version the current project actually resolved
-    -- (matches its pom/gradle lockfile), fall back to a standalone copy
-    local function find_lombok_jar()
-      local candidates = {}
-      vim.list_extend(
-        candidates,
-        vim.fn.glob(vim.fn.expand("~") .. "/.m2/repository/org/projectlombok/lombok/*/lombok-*.jar", false, true)
-      )
-      vim.list_extend(
-        candidates,
-        vim.fn.glob(
-          vim.fn.expand("~") .. "/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/*/*/lombok-*.jar",
-          false,
-          true
-        )
-      )
-      candidates = vim.tbl_filter(function(p)
-        return not p:match("sources%.jar$") and not p:match("javadoc%.jar$")
-      end, candidates)
-      table.sort(candidates)
-      return candidates[#candidates] or vim.fn.expand("~/.local/share/java/lombok.jar")
-    end
-
-    -- jdtls's own cmd() builder reads JDTLS_JVM_ARGS via Lua's os.getenv (nvim's
-    -- own process env), NOT via cmd_env (which only reaches the spawned child) -
-    -- must set it here for the javaagent flag to actually reach the launch args
-    vim.env.JDTLS_JVM_ARGS = "-javaagent:" .. find_lombok_jar()
-
-    vim.lsp.config("jdtls", {
-      -- jdtls server itself requires Java 21+ to launch; scoped to this
-      -- process only, does not touch system JAVA_HOME (project stays on 11)
-      cmd_env = {
-        JAVA_HOME = "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home",
-      },
     })
 
     vim.lsp.config("lua_ls", {

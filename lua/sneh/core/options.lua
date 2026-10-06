@@ -15,7 +15,7 @@ opt.expandtab = true -- expand tab to spaces
 opt.autoindent = true -- copy indent from current line when starting new one
 
 -- line wrapping
-opt.wrap = true -- disable line wrapping
+opt.wrap = true -- wrap long lines
 
 -- search settings
 opt.ignorecase = true -- ignore case when searching
@@ -49,6 +49,10 @@ opt.clipboard = "" -- see the TextYankPost autocmd in core/autocmds.lua
 -- split windows
 opt.splitright = true -- split vertical window to the right
 opt.splitbelow = true -- split horizontal window to the bottom
+
+-- CursorHold delay: drives LSP document highlight and the checktime reload in
+-- core/autocmds.lua (default 4000ms; matches vim/plugin-config/git.vim)
+opt.updatetime = 300
 
 -- turn off swapfile
 opt.swapfile = false

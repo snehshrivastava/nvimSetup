@@ -1,6 +1,17 @@
 return {
   "nvim-telescope/telescope.nvim",
   branch = "master",
+  -- lazy-loaded: :Telescope (alpha dashboard buttons), the keys below, or any
+  -- require("telescope...") (LspAttach's gd/gR/gi/gt, :TodoTelescope)
+  cmd = "Telescope",
+  keys = {
+    { "<leader>fp", "<cmd>Telescope find_files hidden=true<cr>", desc = "Fuzzy find files in cwd (incl. hidden)" },
+    { "<leader>ff", "<cmd>Telescope current_buffer_fuzzy_find<cr>", desc = "Fuzzy find in current buffer" },
+    { "<leader>fr", "<cmd>Telescope oldfiles<cr>", desc = "Fuzzy find recent files" },
+    { "<leader>fs", "<cmd>Telescope live_grep<cr>", desc = "Find string in cwd" },
+    { "<leader>fc", "<cmd>Telescope grep_string<cr>", desc = "Find string under cursor in cwd" },
+    { "<leader>ft", "<cmd>TodoTelescope<cr>", desc = "Find todos" },
+  },
   dependencies = {
     "nvim-lua/plenary.nvim",
     { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
@@ -24,17 +35,5 @@ return {
     })
 
     telescope.load_extension("fzf")
-
-
-    -- set keymaps
-    local keymap = vim.keymap -- for conciseness
-
-    keymap.set("n", "<leader>fp", "<cmd>Telescope find_files hidden=true<cr>", { desc = "Fuzzy find files in cwd (incl. hidden)" })
-    keymap.set("n", "<leader>ff", "<cmd>Telescope current_buffer_fuzzy_find<cr>", { desc = "Fuzzy find in current buffer" })
-    keymap.set("n", "<leader>fr", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
-    keymap.set("n", "<leader>fs", "<cmd>Telescope live_grep<cr>", { desc = "Find string in cwd" })
-    keymap.set("n", "<leader>fc", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
-    keymap.set("n", "<leader>ft", "<cmd>TodoTelescope<cr>", { desc = "Find todos" })
-
   end,
 }
