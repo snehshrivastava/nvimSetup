@@ -80,6 +80,8 @@ return {
 				"black", -- python formatter
 				"pylint", -- python linter
 				"eslint_d", -- js linter
+				"java-debug-adapter", -- jdtls bundle: java DAP (plugins/lsp/jdtls.lua)
+				"java-test", -- jdtls bundle: junit/testng runner
 			},
 		})
 	end,

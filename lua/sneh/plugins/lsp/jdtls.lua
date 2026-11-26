@@ -18,6 +18,12 @@ return {
         return standalone
       end
 
+      -- mason's jdtls package bundles a current lombok.jar next to the launcher
+      local mason_bundled = vim.fn.stdpath("data") .. "/mason/packages/jdtls/lombok.jar"
+      if vim.uv.fs_stat(mason_bundled) then
+        return mason_bundled
+      end
+
       local candidates = {}
       vim.list_extend(
         candidates,
@@ -35,12 +41,20 @@ return {
         return not p:match("sources%.jar$") and not p:match("javadoc%.jar$")
       end, candidates)
       table.sort(candidates)
-      return candidates[#candidates] or standalone
+      -- nil, not a made-up path: -javaagent on a missing jar makes the JVM
+      -- exit 1, killing jdtls (and every LSP mapping) for all java buffers
+      return candidates[#candidates]
     end
 
     -- the mason jdtls python launcher has no JDTLS_JVM_ARGS env hook - it only
     -- accepts extra JVM options via a repeatable --jvm-arg=... CLI flag
-    local lombok_jvm_arg = "--jvm-arg=-javaagent:" .. find_lombok_jar()
+    local lombok_jar = find_lombok_jar()
+    local jdtls_cmd = { "jdtls" }
+    if lombok_jar then
+      table.insert(jdtls_cmd, "--jvm-arg=-javaagent:" .. lombok_jar)
+    else
+      vim.notify("jdtls: no lombok.jar found, starting without lombok support", vim.log.levels.INFO)
+    end
 
     -- java-debug / java-test bundles, mason-installed by mason-tool-installer
     local bundles = {}
@@ -53,6 +67,16 @@ return {
     local java_test_path = mason_registry.get_package("java-test"):get_install_path()
     vim.list_extend(bundles, vim.fn.glob(java_test_path .. "/extension/server/*.jar", true, true))
 
+    -- without the java-debug bundle, setup_dap_main_class_configs() throws "No
+    -- LSP client found that supports vscode.java.resolveMainClass" from
+    -- on_attach, aborting the :edit of every java buffer after the first
+    local has_debug_bundle = vim.iter(bundles):any(function(p)
+      return p:match("com%.microsoft%.java%.debug%.plugin") ~= nil
+    end)
+    if not has_debug_bundle then
+      vim.notify("jdtls: java-debug-adapter not installed (:MasonToolsInstall), java DAP disabled", vim.log.levels.INFO)
+    end
+
     -- ft="java" only lazy-loads this config() once, for the first java buffer;
     -- start_or_attach must run per buffer or later java buffers get no LSP.
     -- The root is resolved per buffer too: computed once up here, every java
@@ -64,12 +88,15 @@ return {
       local root_dir = vim.fs.root(bufnr, { "gradlew", "mvnw", ".git" }) or vim.fn.getcwd()
       local workspace_dir = vim.fn.stdpath("data") .. "/jdtls-workspace/" .. vim.fn.fnamemodify(root_dir, ":p:h:t")
       jdtls.start_or_attach({
-        cmd = { "jdtls", lombok_jvm_arg, "-data", workspace_dir },
+        cmd = vim.list_extend(vim.deepcopy(jdtls_cmd), { "-data", workspace_dir }),
         root_dir = root_dir,
-        -- jdtls server itself requires Java 21+ to launch; scoped to this
-        -- process only, does not touch system JAVA_HOME (project stays on 11)
+        -- the jdtls server's own JVM, scoped to this process only - does not
+        -- touch system JAVA_HOME (projects keep their own JDK). mason's jdtls
+        -- is unpinned and raises its floor (v1.63 needs Java 25; on 21 every
+        -- OSGi bundle fails to resolve and it exits 1), so use brew's
+        -- unversioned openjdk, which tracks the latest release too.
         cmd_env = {
-          JAVA_HOME = "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home",
+          JAVA_HOME = "/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home",
         },
         init_options = {
           bundles = bundles,
@@ -77,8 +104,10 @@ return {
         on_attach = function(_, bufnr)
           -- wires dap.adapters.java / dap.configurations.java from the
           -- java-debug bundle above; without this, debug configs never exist
-          jdtls.setup_dap({ config_overrides = {} })
-          require("jdtls.dap").setup_dap_main_class_configs()
+          if has_debug_bundle then
+            jdtls.setup_dap({ config_overrides = {} })
+            require("jdtls.dap").setup_dap_main_class_configs()
+          end
 
           -- jdtls's type index doesn't always pick up a newly-added member on
           -- save alone; these force a reindex without leaving nvim
